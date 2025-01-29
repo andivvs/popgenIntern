@@ -6,7 +6,7 @@ conda activate bcftools
 #!/bin/bash
 VCF_FILE="MO_108.genotyped.SNP.and.INDEL.AN5.HardFilter.snpONLY.vcf.gz"
 OUTPUT_FILE="contigs_info.txt"
-zgrep "^##contig" "$VCF_FILE" | awk -F'[,=<>]' '
+zgrep "^##contig" "$VCF_FILE" | awk -F'[,=<>]' '  ## '[,=<>]' means that awk treats ,; =; <; and > as delimiters
 {
    for (i=1; i<=NF; i++){
      if ($i == "ID") contig_name=$(i+1);
