@@ -1,1 +1,30 @@
-
+pwd
+ls
+cd VCFs
+ls
+conda activate bcftools
+#!/bin/bash
+VCF_FILE="MO_108.genotyped.SNP.and.INDEL.AN5.HardFilter.snpONLY.vcf.gz"
+OUTPUT_FILE="contigs_info.txt"
+zgrep "^##contig" "$VCF_FILE" | awk -F'[,=<>]' '
+{
+   for (i=1; i<=NF; i++){
+     if ($i == "ID") contig_name=$(i+1);
+     if ($i == "length") contig_length=$(i+1);
+ }
+print "Contig:", contig_name, "Length:", contig_length; count++;
+ }
+END{
+print "Number of contigs:", count;
+ }'>"$OUTPUT_FILE"
+echo "Contig information has been saved to $OUTPUT_FILE"
+Contig information has been saved to contigs_info.txt
+cat contigs_info.txt
+Contig: chromosome_1 Length: 7978604
+Contig: chromosome_2 Length: 8319966
+Contig: chromosome_3 Length: 6606598
+Contig: chromosome_4 Length: 5546968
+Contig: chromosome_5 Length: 4490059
+Contig: chromosome_6 Length: 4133993
+Contig: chromosome_7 Length: 3415785
+Number of contigs: 7
