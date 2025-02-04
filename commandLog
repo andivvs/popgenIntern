@@ -48,3 +48,28 @@ Contig: chromosome_5 Length: 4490059
 Contig: chromosome_6 Length: 4133993
 Contig: chromosome_7 Length: 3415785
 Number of contigs: 7
+
+
+
+##RStudio PCA Commands
+library(gdsfmt)
+library(SNPRelate)
+vcf.fn <- "/home/Downloads/MO_108.genotyped.SNP.and.INDEL.AN5.HardFilter.snpONLY.vcf.gz"
+snpgdsVCF2GDS(vcf.fn, "test.gds", method="biallelic.only")
+snpgdsSummary("test.gds")
+genofile <- snpgdsOpen("test.gds")
+set.seed(1000)
+snpset <- snpgdsLDpruning(genofile, ld.threshold=0.2)
+str(snpset)
+names(snpset)
+snpset.id <- unlist(unname(snpset))
+head(snpset.id)
+pca <- snpgdsPCA(genofile, snp.id=snpset.id, num.thread = 2)
+pc.percent <- pca$varprop*100
+head(round(pc.percent, 2))
+tab <- data.frame(sample.id = pca$sample.id,
+                  EV1 = pca$eigenvect[,1],
+                  EV2 = pca$eigenvect[,2],
+                  stringsAsFactors = FALSE)
+head(tab)
+plot(tab$EV2, tab$EV1, xlab="eigenvector 2", ylab="eigenvector 1")
