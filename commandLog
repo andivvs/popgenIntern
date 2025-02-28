@@ -25,7 +25,6 @@ Contig: chromosome_5 Length: 4490059
 Contig: chromosome_6 Length: 4133993
 Contig: chromosome_7 Length: 3415785
 Number of contigs: 7
-
 ##With bcftools
 VCF_FILE="MO_108.genotyped.SNP.and.INDEL.AN5.HardFilter.snpONLY.vcf.gz"
 bcftools view -h "$VCF_FILE" | grep "^##contig" | awk -F'[,=<>]' ' {
@@ -50,7 +49,6 @@ Contig: chromosome_7 Length: 3415785
 Number of contigs: 7
 
 
-
 ##RStudio PCA Commands
 library(gdsfmt)
 library(SNPRelate)
@@ -73,3 +71,46 @@ tab <- data.frame(sample.id = pca$sample.id,
                   stringsAsFactors = FALSE)
 head(tab)
 plot(tab$EV2, tab$EV1, xlab="eigenvector 2", ylab="eigenvector 1")
+
+
+##Script to divide the samples into clusters
+pca_matrix <- as.matrix(tab[, c("EV1", "EV2")])
+rownames(pca_matrix) <- tab$sample.id
+head(pca_matrix)
+set.seed(123)
+num_clusters <- 3
+km_res <- kmeans(pca_matrix, centers = num_clusters)
+tab$Cluster <- as.factor(km_res$cluster)
+head(tab)
+plot(tab$EV2, tab$EV1, col=tab$Cluster, pch=19,
+     xlab="eigenvector 2", ylab="eigenvector 1")
+legend("topleft", legend=levels(tab$Cluster), col=1:length(levels(tab$Cluster)), pch=19)
+write.csv(tab, "PCA_with_clusters.csv", row.names=FALSE)
+
+
+##Script to create VCF FIles for each cluster with RStudio
+tab <- read.csv("PCA_with_clusters.csv")
+clusters <- split(tab, tab$Cluster)
+for (i in names(clusters)) {
+  filename <- paste0("Cluster_", i, ".txt")
+  write.table(clusters[[i]], file = filename, row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+  cat("Saved:", filename, "\n")
+}
+cluster1 <- tab[tab$Cluster == 1, ]
+cluster2 <- tab[tab$Cluster == 2, ]
+cluster3 <- tab[tab$Cluster == 3, ]
+str(cluster1)
+str(cluster2)
+str(cluster3)
+write.table(cluster1$sample.id, file="Cluster_1_fixed.txt", quote=FALSE, row.names=FALSE, col.names=FALSE)
+write.table(cluster2$sample.id, file="Cluster_2_fixed.txt", quote=FALSE, row.names=FALSE, col.names=FALSE)
+write.table(cluster3$sample.id, file="Cluster_3_fixed.txt", quote=FALSE, row.names=FALSE, col.names=FALSE)
+file.show("Cluster_1_fixed.txt")
+file.show("Cluster_2_fixed.txt")
+file.show("Cluster_3_fixed.txt")
+
+
+##Script to create VCFs Files with Linux
+bcftools view -S Cluster_1_fixed.txt MO_108.genotyped.SNP.and.INDEL.AN5.HardFilter.snpONLY.vcf.gz -Oz -o Cluster_1.vcf.gz
+bcftools view -S Cluster_2_fixed.txt MO_108.genotyped.SNP.and.INDEL.AN5.HardFilter.snpONLY.vcf.gz -Oz -o Cluster_2.vcf.gz
+bcftools view -S Cluster_3_fixed.txt MO_108.genotyped.SNP.and.INDEL.AN5.HardFilter.snpONLY.vcf.gz -Oz -o Cluster_3.vcf.gz
