@@ -114,3 +114,81 @@ file.show("Cluster_3_fixed.txt")
 bcftools view -S Cluster_1_fixed.txt MO_108.genotyped.SNP.and.INDEL.AN5.HardFilter.snpONLY.vcf.gz -Oz -o Cluster_1.vcf.gz
 bcftools view -S Cluster_2_fixed.txt MO_108.genotyped.SNP.and.INDEL.AN5.HardFilter.snpONLY.vcf.gz -Oz -o Cluster_2.vcf.gz
 bcftools view -S Cluster_3_fixed.txt MO_108.genotyped.SNP.and.INDEL.AN5.HardFilter.snpONLY.vcf.gz -Oz -o Cluster_3.vcf.gz
+
+
+##Script for Python
+import sys
+!{sys.executable} -m pip install scikit-allel
+
+%pip install scikit-allel
+
+%pip install matplotlib
+
+import allel
+import numpy as np
+import matplotlib.pyplot as plt
+
+def compute_windowed_diversity(vcf_file, window_size=20000, step_size=10000):
+   
+    callset = allel.read_vcf(vcf_file) 
+    genotypes = allel.GenotypeArray(callset['calldata/GT'])
+    pos = callset['variants/POS']
+    
+    sort_idx = np.argsort(pos)
+    pos = np.sort(pos)  
+    ac = genotypes.count_alleles()
+    ac = ac[sort_idx]
+
+    pi_windows, windows, counts, _ = allel.windowed_diversity(pos, ac, size=window_size, step=step_size)
+
+
+    mean_pi = np.mean(pi_windows)
+    median_pi = np.median(pi_windows)
+
+    print(f"\nResults for {vcf_file}:")
+    print(f"Mean nucleotide diversity (π): {mean_pi}")
+    print(f"Median nucleotide diversity (π): {median_pi}")
+
+    for i in range(min(5, len(windows))):
+        print(f"Window {i+1}: {windows[i]}, π: {pi_windows[i]}")
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(windows[:, 0], pi_windows, marker='o', linestyle='-')
+    plt.xlabel('Genomic Position (bp)')
+    plt.ylabel('Nucleotide Diversity (π)')
+    plt.title(f'Nucleotide Diversity in {vcf_file}')
+    plt.grid()
+    plt.show()
+
+vcf_files = ["Cluster_1.vcf.gz", "Cluster_2.vcf.gz", "Cluster_3.vcf.gz"]
+for vcf in vcf_files:
+    compute_windowed_diversity(vcf)
+
+##Results##
+
+Results for Cluster_1.vcf.gz:
+Mean nucleotide diversity (π): 0.001371464191958016
+Median nucleotide diversity (π): 0.00033297173183614246
+Window 1: [  300 20299], π: 0.012583848202795182
+Window 2: [10300 30299], π: 0.009865218829427492
+Window 3: [20300 40299], π: 0.006953493805719872
+Window 4: [30300 50299], π: 0.00596050591305106
+Window 5: [40300 60299], π: 0.002475006884254919
+
+Results for Cluster_2.vcf.gz:
+Mean nucleotide diversity (π): 0.0013437334934659362
+Median nucleotide diversity (π): 0.00036172475199698536
+Window 1: [  300 20299], π: 0.012237870436026496
+Window 2: [10300 30299], π: 0.008400776025523454
+Window 3: [20300 40299], π: 0.003252378077552649
+Window 4: [30300 50299], π: 0.002410482574146657
+Window 5: [40300 60299], π: 0.0016070616323983053
+
+Results for Cluster_3.vcf.gz:
+Mean nucleotide diversity (π): 0.0021338666236972925
+Median nucleotide diversity (π): 0.0010768745377765772
+Window 1: [  300 20299], π: 0.010360405397462202
+Window 2: [10300 30299], π: 0.009021167658749768
+Window 3: [20300 40299], π: 0.005391248937587441
+Window 4: [30300 50299], π: 0.005892668347995613
+Window 5: [40300 60299], π: 0.007122259767572732
